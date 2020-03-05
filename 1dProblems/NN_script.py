@@ -3,7 +3,7 @@
 """
 Created on Tue Mar  3 11:45:37 2020
 
-@author: 7ml
+@author: 7ml (Massimiliano Lupo Pasini)
 """
 
 import numpy as np
