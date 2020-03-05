@@ -1,4 +1,4 @@
-function [final_mesh, omega] = dynamic_mesh_refinement1D(n0, x0, x1, epsilon, function_string)
+function [final_mesh, omega] = adaptive_mesh_moving1D(n0, x0, x1, epsilon, function_string)
 
     count_iter = 0;
 

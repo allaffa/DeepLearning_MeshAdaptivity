@@ -1,4 +1,4 @@
-  function [sol, original_gradient, final_mesh] = dynamic_mesh_refinement1D_2(n0, x0, x1, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x)
+  function [sol, original_gradient, final_mesh] = adaptive_mesh_moving1D_2(n0, x0, x1, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x)
 
     count_iter = 0;
     
