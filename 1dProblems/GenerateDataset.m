@@ -31,7 +31,7 @@ for iter = 1:num_experiments
     rhs = rand * (rhs_range(2)-rhs_range(1));
     rhs_x = rand * (rhs_range(2)-rhs_range(1));
     
-    [sol, original_gradient, final_mesh] = adaptive_mesh_moving1D_2(n0, x0, x1, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x);
+    [sol, original_gradient, final_mesh] = adaptive_mesh_moving1D(n0, x0, x1, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x);
 %     gradients_cell{iter} = original_gradient; 
 %     meshes_cell{iter} = final_mesh; 
     gradients = [gradients; original_gradient'];
