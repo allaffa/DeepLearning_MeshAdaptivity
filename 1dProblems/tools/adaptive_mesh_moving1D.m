@@ -1,4 +1,4 @@
-  function [sol, original_gradient, final_mesh] = adaptive_mesh_moving1D(n0, x0, x1, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x)
+  function [initial_sol, original_gradient, final_mesh] = adaptive_mesh_moving1D(grid, epsilon, diff, diff_x, advection, advection_x, reaction, reaction_x, rhs, rhs_x)
 
     count_iter = 0;
     
@@ -9,15 +9,17 @@
     f = @( x ) rhs + rhs_x + x; 
     
     % n0 = initial value for the number of mesh nodes
-    computational_domain = linspace(x0, x1, n0);
-    computational_domain = computational_domain';
-
+    computational_domain = grid;
+    x0 = grid(1);
+    x1 = grid(end);
+    
     physical_domain = computational_domain;    % Construct and Solve the problem on the coarse mesh
     [A,rhs] = prob_assemble( a, aprime, b, c, f, physical_domain );
     sol = A\rhs;
     original_gradient = Centered_gradient(physical_domain, sol);
     
     discrepancy = 1;
+    initial_sol = sol;
     
     while( discrepancy>epsilon )
         
@@ -42,6 +44,8 @@
         
         [A,rhs] = prob_assemble( a, aprime, b, c, f, physical_domain );
         sol = A\rhs;
+        
+        count_iter = count_iter + 1; 
         
         display(strcat('Iteration counter: ', num2str(count_iter), ' - discrepancy: ', num2str(discrepancy)));
          
