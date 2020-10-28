@@ -14,6 +14,7 @@ from keras.models import model_from_json
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt 
 
+plt.rcParams.update({'font.size': 16})
 
 final_meshes = np.loadtxt('final_meshes.txt', skiprows=0)
 shocks = np.loadtxt('shocks.txt', skiprows=0)
@@ -40,7 +41,7 @@ opt = keras.optimizers.Nadam(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
 model.compile(loss='mae', optimizer=opt, metrics=['accuracy'])
 
 # fit the keras model on the dataset
-model.fit(x_train, y_train, epochs=5000, batch_size=100, validation_split = 0.2)
+history = model.fit(x_train, y_train, epochs=5000, batch_size=100, validation_split = 0.2)
 
 #Save the trained model in a .json file
 # serialize model to JSON
@@ -67,7 +68,7 @@ print('test loss, test acc:', results)
 
 preds = model.predict(x_test)
 
-num_pred = 1939
+num_pred = 7050
 
 uniform = np.linspace(0,1,x_train.shape[1])
 
@@ -75,15 +76,35 @@ plt.show()
 fig = plt.figure()
 ax = plt.subplot(111)
 ax.plot(uniform, preds[num_pred], label = 'MLP - deep learning')
-ax.plot(uniform, y_test[num_pred], label = 'Adaptive zoning - OLD')
-plt.xlabel('index of the array coordinate')
-plt.ylabel('Coordinates in final mesh zoning')
+ax.plot(uniform, y_test[num_pred], label = 'Adaptive zoning')
+plt.xlabel('Uniform mesh node coordinates')
+plt.ylabel('Adapted mesh node coordinates')
 ax.legend()
+plt.savefig('old_mesh')
 
 plt.show()
 fig = plt.figure()
 ax = plt.subplot(111)
 ax.plot(uniform, x_test[num_pred], label = 'Shock profile')
-plt.xlabel('value of profile')
-plt.ylabel('Coordinates in final mesh zoning')
+plt.xlabel('Uniform mesh node coordinates')
+plt.ylabel('Values of shock profile')
 ax.legend()
+
+old_pred = model.predict(x_test[num_pred])
+x_test[num_pred][140:170] = 9.0
+new_pred = model.predict(x_test[num_pred])
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(1,len(loss)+1)
+plt.figure()
+plt.plot(epochs, loss, 'b', label = 'training loss')
+plt.plot(epochs, val_loss, 'r', label = 'validation loss')
+plt.yscale('log')
+#plt.title('Training and validation accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.draw()
+plt.savefig('loss_function_plot')

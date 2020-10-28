@@ -15,11 +15,11 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt 
 
 
-#meshes = np.loadtxt('initial_meshes.txt', skiprows=0)
-gradients = np.loadtxt('gradients.txt', skiprows=0)
-final_deltas = np.loadtxt('final_deltas.txt', skiprows=0)
-solutions = np.loadtxt('solutions.txt', skiprows=0)
-adapted_meshes = np.loadtxt('adapted_meshes.txt', skiprows=0)
+#meshes = np.loadtxt('data_set/initial_meshes.txt', skiprows=0)
+#gradients = np.loadtxt('data_set/gradients.txt', skiprows=0)
+#final_deltas = np.loadtxt('data_set/final_deltas.txt', skiprows=0)
+solutions = np.loadtxt('data_set/solutions.txt', skiprows=0)
+adapted_meshes = np.loadtxt('data_set/adapted_meshes.txt', skiprows=0)
 
 input_dim = solutions.shape[1]
 output_dim = adapted_meshes.shape[1]
@@ -43,7 +43,7 @@ opt = keras.optimizers.Nadam(learning_rate=0.00001, beta_1=0.9, beta_2=0.999)
 model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
 
 # fit the keras model on the dataset
-model.fit(x_train, y_train, epochs=10000, batch_size=100, validation_split = 0.2)
+history = model.fit(x_train, y_train, epochs=10000, batch_size=100, validation_split = 0.2)
 
 #Save the trained model in a .json file
 # serialize model to JSON
@@ -90,3 +90,18 @@ ax.plot(uniform, x_test[num_pred], label = 'Solution to ADR problem')
 plt.xlabel('index of the array coordinate')
 plt.ylabel('Coordinates in final mesh zoning')
 ax.legend()
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(1,len(loss)+1)
+plt.figure()
+plt.plot(epochs, loss, 'b', label = 'training loss')
+plt.plot(epochs, val_loss, 'r', label = 'validation loss')
+plt.yscale('log')
+plt.title('Training and validation accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.draw()
+plt.savefig('loss_function_plot')

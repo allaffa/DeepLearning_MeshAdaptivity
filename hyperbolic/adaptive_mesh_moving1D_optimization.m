@@ -1,23 +1,27 @@
-function [final_mesh] = adaptive_mesh_moving1D_optimization( nnodes, physical_grid, solution, kernel_width)
-   
-    profile = solution; 
+function [final_mesh, uniform_grid, omega] = adaptive_mesh_moving1D_optimization( physical_grid, profile, kernel_width )
     
-    gradient_solution = Centered_gradient(physical_grid, profile);
-
-    omega = monitor_function1D(physical_grid, gradient_solution); 
-    omega = [1.0; omega; 1.0];
+    %Map solution on uniform grid
+    uniform_grid = linspace(physical_grid(1), physical_grid(end), length(physical_grid))';
+    profile_uniform_grid = pchip(physical_grid, profile, uniform_grid);  
     for i = 1:1
-        omega = smoothdata(omega, 'gaussian', kernel_width);
-    end     
-        
-    uniform_physical_grid = linspace(physical_grid(1), physical_grid(end), nnodes)';
-    omega_uniform_physical_grid = interp1q(physical_grid, omega, uniform_physical_grid);
-    omega_uniform_physical_grid = omega_uniform_physical_grid';    
+        profile_uniform_grid = smoothdata( profile_uniform_grid, 'gaussian', ceil(kernel_width) );
+    end         
+    
+%     gradient_profile = Centered_gradient(uniform_grid, profile_uniform_grid);
+    gradient_profile = gradient(profile_uniform_grid, uniform_grid);
+    
+    omega = monitor_function1D(uniform_grid, gradient_profile); 
+%     for i = 1:1
+%         omega = smoothdata(omega, 'gaussian', ceil(kernel_width*length(uniform_grid)));
+%     end     
+%     omega = omega';
+    
+    [A_adaptive,rhs_adaptive] = elliptic_mesh_moving_problem_FINITE_VOLUMES( omega, uniform_grid);
+    map = A_adaptive\rhs_adaptive; 
+ 
 
-    [A_adaptive,rhs_adaptive] = elliptic_mesh_moving_problem_FINITE_VOLUMES( omega_uniform_physical_grid, uniform_physical_grid );
-    map = A_adaptive\rhs_adaptive;    
+    final_mesh = map'; 
 
-    final_mesh = map; 
 
 return 
 end

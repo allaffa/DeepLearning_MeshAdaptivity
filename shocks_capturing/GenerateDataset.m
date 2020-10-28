@@ -1,14 +1,16 @@
-n0 = 41;
+n0 = 201;
 x0 = 0; 
 x1 = 1;
 reference_grid = linspace(x0, x1, n0)'; 
-num_problems = 50000;
+num_problems = 500;
 range_value = [-10; 10];
 max_num_shocks = 3;
 
 index_counter = 1;
 shock_coordinate = x0;
 kernel_width = 5;
+
+max_num_smoothing = 10;
 
 shocks = zeros(num_problems, n0); 
 final_meshes = zeros(num_problems, n0); 
@@ -17,7 +19,7 @@ value = range_value(1) + ( range_value(2)-range_value(1) )*rand(1,1);
 
 for problem_index = 1:num_problems
 
-    num_shocks = randi(max_num_shocks,1,1); 
+    num_shocks = randi(max_num_shocks+1,1,1)-1; 
     profile = zeros(size(reference_grid));
     
     shocks_position = x0+(x1-x0)*rand(1,num_shocks);
@@ -34,6 +36,12 @@ for problem_index = 1:num_problems
             profile(index_coordinate) = value;
         end
     end
+    
+    num_smoothing = randi(max_num_smoothing,1,1); 
+    for i = 1:num_smoothing
+        profile = smoothdata(profile, 'gaussian', 5);
+    end     
+        
     
     [adapted_mesh] = adaptive_mesh_moving1D_optimization(reference_grid, profile, kernel_width);
     grid = adapted_mesh';

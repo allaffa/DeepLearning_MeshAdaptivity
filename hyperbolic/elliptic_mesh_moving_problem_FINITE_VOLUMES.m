@@ -96,9 +96,17 @@ function [A,rhs] = elliptic_mesh_moving_problem_FINITE_VOLUMES ( a, x )
 %
   for i = 2 : n - 1
 
-    A(i,i-1) = - ( a(i)+a(i-1) )/( 2*(xsi(i)-xsi(i-1)) );
+%     Arithmetic mean
+    a_w = (a(i)+a(i-1))/2;  
+    a_e = (a(i)+a(i+1))/2;  
 
-    A(i,i+1) = - ( a(i)+a(i+1) )/( 2*(xsi(i+1)-xsi(i)) );
+    % Harmonic mean
+%     a_w = (2*a(i)*a(i-1))/(a(i)+a(i-1));
+%     a_e = (2*a(i)*a(i+1))/(a(i)+a(i+1));
+      
+    A(i,i-1) = - ( a_w )/( (xsi(i)-xsi(i-1)) );
+    
+    A(i,i+1) = - ( a_e )/( (xsi(i+1)-xsi(i)) );
     
     A(i,i) = - ( A(i,i-1) + A(i,i+1) );
 

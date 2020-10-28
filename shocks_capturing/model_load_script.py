@@ -35,7 +35,7 @@ def evaluate_model_load(input):
     print("Loaded model from disk")
     #print("input shape: ", input.shape)
     input = np.asarray(input)
-    input = input.reshape(1,201)
+    input = input.reshape(1,100)
     pred = loaded_model.predict(np.asarray(input))
     return pred
 
