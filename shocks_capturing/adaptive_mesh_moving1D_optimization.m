@@ -9,10 +9,10 @@ function [adapted_physical_mesh] = adaptive_mesh_moving1D_optimization(physical_
     omega = monitor_function1D(reference_grid, gradient_profile_reference_grid); 
     omega = [1.0; omega; 1.0];
     
-    for i = 1:1
-        omega = smoothdata(omega, 'gaussian', kernel_width);
-    end     
-    omega = omega';
+%     for i = 1:1
+%         omega = smoothdata(omega, 'gaussian', kernel_width);
+%     end     
+%     omega = omega';
     
     [A_adaptive,rhs_adaptive] = elliptic_mesh_moving_problem_FINITE_VOLUMES( omega, reference_grid, physical_grid );
     map = A_adaptive\rhs_adaptive;
