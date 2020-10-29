@@ -3,18 +3,29 @@ clc
 
 x0 = 0;
 x1 = 1;
-nnodes = 401;
+nnodes = 201;
 
 t0 = 0.0;
-n_time_steps = 10;
+n_time_steps = 2;
 dt = 0.005;
 t = t0;
 
 kernel_width = nnodes * 1e-3;
 
 % Analytical solution
-sol_exact_fun = @(x, t, vel) 0.0 + 1.0 * ( ( (x >= 0.4 + vel * t) & (x <= 0.5 + vel * t ) ) );
-% sol_exact_fun = @(x, t, vel) 0.0 + 1.0 * ( (x >= 0.1 + vel * t) );
+a = 0.2;
+f_a = 1;
+b = 0.4;
+f_b = 4;
+c = 0.7;
+f_c = 1;
+d = 0.9;
+f_d = 2;
+sol_exact_fun = @(x, t, vel) 0.0 + ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) .* ( f_a + (f_b-f_a)/(b-a)*(x-a) ) ...
+                + ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) ) .* ( f_c + (f_d-f_c)/(d-c)*(x-c) );
+               
+% sol_exact_fun = @(x, t, vel) 0.0 + 100.0 * ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) + 100.0 * ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) );
+% sol_exact_fun = @(x, t, vel) 0.0 + 1 * ( ( (x >= 0.6+ vel * t) ) );
 % 
 velocity = 1.0;
 
