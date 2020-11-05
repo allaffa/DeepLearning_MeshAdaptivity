@@ -1,4 +1,4 @@
-function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative(gamma, x, U1, U2, P, t0, tF, upwind, verbose, solver, kernel_width, adaptive_mesh)
+function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative_unsteady_mesh(gamma, x, U1, U2, P, t0, tF, upwind, verbose, solver, kernel_width, adaptive_mesh)
 
     n = length(x);
 
@@ -48,9 +48,12 @@ function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equatio
    
    while(t<tF)
 
+       % compute the new time step
+       dt = time_step_compute(gamma, p_old, u1_old, u2_old./u1_old, x);       
+       
        if(adaptive_mesh)
            
-           [x_new, ~, monitor_function] = adaptive_mesh_moving1D_optimization( x_old, u1_old, kernel_width );
+           [x_new, ~, monitor_function] = unsteady_adaptive_mesh_moving1D_optimization( x_old, u1_old, kernel_width, 1e-7 );
            u1_old2 = interp1(x_old,u1_old,x_new, 'linear', 'extrap');
            u2_old2 = interp1(x_old,u2_old,x_new, 'linear', 'extrap');
            u3_old2 = interp1(x_old,u3_old,x_new, 'linear', 'extrap');
@@ -63,10 +66,11 @@ function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equatio
            p_old = p_old2;
            x = x_new;
            x_old = x_new;
+           
+           % Re-compute the new time step
+           dt = time_step_compute(gamma, p_old, u1_old, u2_old./u1_old, x);           
+           
        end       
-       
-       % compute the new time step
-       dt = time_step_compute(gamma, p_old, u1_old, u2_old./u1_old, x);
 
        if(verbose)
            display(strcat('Time(s): ', num2str(t)));

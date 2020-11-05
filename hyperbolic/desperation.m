@@ -21,11 +21,11 @@ c = 0.7;
 f_c = 1;
 d = 0.9;
 f_d = 2;
-sol_exact_fun = @(x, t, vel) 0.0 + ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) .* ( f_a + (f_b-f_a)/(b-a)*(x-a) ) ...
-                + ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) ) .* ( f_c + (f_d-f_c)/(d-c)*(x-c) );
+% sol_exact_fun = @(x, t, vel) 0.0 + ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) .* ( f_a + (f_b-f_a)/(b-a)*(x-a) ) ...
+%                 + ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) ) .* ( f_c + (f_d-f_c)/(d-c)*(x-c) );
                
-% sol_exact_fun = @(x, t, vel) 0.0 + 100.0 * ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) + 100.0 * ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) );
-% sol_exact_fun = @(x, t, vel) 0.0 + 1 * ( ( (x >= 0.6+ vel * t) ) );
+sol_exact_fun = @(x, t, vel) 0.0 + 100.0 * ( ( (x >= a + vel * t) & (x <= b + vel * t ) ) ) + 100.0 * ( ( (x >= c + vel * t) & (x <= d + vel * t ) ) );
+% sol_exact_fun = @(x, t, vel) 0.0 + 1 * ( ( (x >= 0.01+ vel * t) ) );
 % 
 velocity = 1.0;
 
@@ -44,7 +44,7 @@ plot(max(0,final_mesh), 0.5, 'o', 'Linewidth', 3)
 %ylim([-0.2 1.2])
 xlabel('Coordinates in the physical domain')
 ylabel('Solution values')
-plot(max(0,physical_grid), profile_exact, '-', 'linewidth', 1);
+plot(max(0,physical_grid), profile_exact, '-', 'linewidth', 5);
 title(strcat('Time: ', num2str(t)))
 % plot(max(0,uniform_grid), omega)
 

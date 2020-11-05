@@ -7,11 +7,11 @@ function monitor_values = monitor_function1D(xh, gradient)
     % In case we have to refine, we will refine also on the adjacent area 
     % on the boundary
 
-    epsilon = 1;
+    epsilon = 100;
     
     for i = 1:size(gradient,1)
         
-        monitor_values(i) = sqrt( 1+epsilon*gradient(i)^2 );
+        monitor_values(i) = sqrt( 1+epsilon*(gradient(i)/max(abs(gradient)))^2 );
         
     end
 
