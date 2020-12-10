@@ -1,9 +1,7 @@
-close all
-clc
-
 x0 = 0;
 x1 = 1;
-nnodes = 401;
+nnodes = 501;
+xc = 0.5;
 
 t0 = 0.0;
 tF = 0.2;
@@ -11,7 +9,7 @@ gamma = 1.4;
 
 upwind = true;
 verbose = true;
-adaptive_mesh = true;
+adaptive_mesh = false;
 
 kernel_width = nnodes * 0.05;
 
@@ -35,25 +33,29 @@ for i = 1:length(physical_grid_uniform)
     
 end
 
-[physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative_unsteady_mesh(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, upwind, verbose, 1, ...
-    kernel_width, adaptive_mesh);
+%exactsol = analytic_sod(tF);
+
+% [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, upwind, verbose, 1, ...
+%     kernel_width, adaptive_mesh);
+
+[physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative_WENO5(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF);
 
 figure()
-plot(physical_grid, u1_new, '-o', 'Linewidth', 1)
+%plot(exactsol.x, exactsol.rho)
 hold on
-plot(physical_grid, 4.0, '-o', 'Linewidth', 1)
+plot(physical_grid, u1_new, '-o', 'Linewidth', 1)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Density')
 set(gca, 'fontsize', 40)
 title(strcat('Density - time = ', num2str(t_current)))
 
-% figure()
-% plot(physical_grid, u2_new./u1_new, '-o', 'Linewidth', 1)
-% xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
-% title('Velocity')
-% set(gca, 'fontsize', 40)
-% title(strcat('Velocity - time = ', num2str(t_current)))
-% 
+figure()
+plot(physical_grid, u2_new./u1_new, '-o', 'Linewidth', 1)
+xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
+title('Velocity')
+set(gca, 'fontsize', 40)
+title(strcat('Velocity - time = ', num2str(t_current)))
+
 figure()
 plot(physical_grid, (u3_new - 1/2*u2_new.*u2_new./u1_new)./u1_new, '-o', 'Linewidth', 1)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
