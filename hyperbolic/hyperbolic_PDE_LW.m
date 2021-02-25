@@ -53,15 +53,16 @@ end
 
 
 figure()
-plot(max(0,physical_grid), sol_exact_fun(physical_grid, t, velocity), 'linewidth', 1);
+plot(max(0,physical_grid), sol_exact_fun(physical_grid, t, velocity), 'linewidth', 4);
 set(gca, 'fontsize', 45);
+ylim([-0.2, 1.2])
 hold on
 % plot(max(0,physical_grid), 0.5, 'o', 'Linewidth', 3)
 % plot(max(0,physical_grid_uniform), omega, '-o', 'Linewidth', 1)
 % %ylim([-0.2 1.2])
 % xlabel('Coordinates in the physical domain')
 % ylabel('Solution values')
-plot(max(0,physical_grid), solution, '-', 'linewidth', 1);
+plot(max(0,physical_grid), solution, '-', 'linewidth', 4);
     legend('Analytical solution', 'Numerical solution');
 title(strcat('Time: ', num2str(t)))
 

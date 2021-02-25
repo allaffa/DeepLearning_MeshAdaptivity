@@ -1,4 +1,5 @@
 pyExec	= '/opt/anaconda3/bin/python3';
+[ver, exec, loaded]	= pyversion(pyExec);
 
 python_path = py.sys.path;
 
@@ -14,68 +15,100 @@ assert(loaded2==1);
 python_module = py.importlib.import_module('model_load_script');
 %%
 
-n0 = 201;
-x0 = 0; 
-x1 = 1;
-physical_grid = linspace(x0, x1, n0)'; 
-uniform_mesh = physical_grid; 
+%Problem definiton
+  %exact_sol = @(x, t, v) 0.0 + 1.0 * ( ( (x >= 0.25 + v * t) & (x <= 0.45 + v * t ) ) ) + 1.0 * ( ( (x >= 0.65 + v * t) & (x <= 0.85 + v * t ) ) );
+  exact_sol = @(x, t, v) 0.0 + 1.0 * ( ( (x >= 0.30 + v * t) & (x <= 0.50 + v * t ) ) ) ;
+  
+  %Physical domain boundaries
+  xa = 0.0;
+  xb = 1.0;
 
-time_steps = 200;
-delta_shift = (x1-x0)/time_steps;
+  %Parameters
+  smooth_opt   = ["none","weightavrg","gaussian"];
+  avrg_opt     = ["arithmetic","harmonic","geometric"];
+  interp_opt   = ["linear","pchip"];
+  nnodes       = 201;
+  time_start   = 0.0;
+  velocity     = 1.e-2;
+  diffusion    = 0.e-5;
+  niter_mmpde  = 4;
+  niter_coupl  = 2;
+  smoothing    = smooth_opt(1);
+  nsmooth      = 2;
+  ksmooth      = 1.2e-1;
+  avrg         = avrg_opt(1); 
+  numtimesteps = 16;
+  timestep     = 0.5;
+  time 	       = time_start;
+  eps_omega    = 1.e-2;
+  interp_method= interp_opt(1);
+  
+  %Computational mesh is always uniform; ksi e [0,1]
+  comp_mesh = linspace( 0, 1, nnodes)';
+  
+  %Initialize physical mesh as uniform
+  physical_mesh = linspace( xa, xb, nnodes )';
 
-index_counter = 1;
-shock_coordinate = x0;
-kernel_width = n0;
+  %Boundary and initial conditions
+  ua = 0.0;
+  ub = 0.0;
+  u0 = exact_sol(physical_mesh,time,velocity);
+  u1 = u0;
 
-value = 1.0;
+  %PDE coefficients arrays
+  vel = velocity*ones(nnodes,1);
+  dif = diffusion*ones(nnodes,1);
+  
+  AI_method = 'DL';
 
-figure
-pause
-
-for time_index = 1:time_steps
-
-    solution = zeros(size(physical_grid));
+  %Time stepping
+  for ts = 1:numtimesteps
+      
+    display(strcat("Time step: ",num2str(ts)," of ",num2str(numtimesteps)))
     
-    index_coordinate = 1;
-    while index_coordinate < n0
-        if( physical_grid(index_coordinate) <= shock_coordinate )
-            solution(index_coordinate) = value;
-        else
-            solution(index_coordinate) = 0.0;
-        end
-        index_coordinate = index_coordinate+1;
+    init_mesh = physical_mesh;
+      
+    if strcmp(AI_method, 'DL')
+        physical_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(u0))));
+        physical_mesh = sort(physical_mesh);
+    else
+        standard_deviation =  1e-2;
+        physical_mesh = importance_sampling_mesh(physical_mesh, u0, standard_deviation);
     end
 
-    [adapted_mesh] = adaptive_mesh_moving1D_optimization(physical_grid, solution, kernel_width);
-    deep_mesh = double(python_module.evaluate_model_load(solution));
-    
-    subplot(1,2,1)
-    plot(physical_grid, solution, '*-', 'LineWidth', 5)
-    xlim([x0, x1])
-    xlabel('domain')
-    ylabel('profile value')
-    title('Shock wave')
-    set(gca, 'fontsize', 36)
-    subplot(1,2,2)
-    plot(adapted_mesh, '*-', 'LineWidth', 8)
-    hold on
-    plot(deep_mesh, 'o-', 'LineWidth', 3)
-    plot(uniform_mesh, 'LineWidth', 3)
-    xlabel('node index')
-    ylabel('node coordinate')
-    title('Mesh')
-    set(gca, 'fontsize', 36)
-    legend('Standard Adaptive', 'Deep Learning', 'Uniform', 'location', 'southeast')
-    hold off
-    xlim([1 n0])
-    ylim([x0 x1])
-    pause(0.1)
-    
-    grid = adapted_mesh';
-    
-    index_counter = index_counter + 1;
-    shock_coordinate = shock_coordinate + delta_shift;
+    u0 = interp1(init_mesh,u0,physical_mesh,'linear','extrap');
 
-end
+    %Solve PDE using adaptive mesh
+    [u1] = solve_ADE(nnodes,vel,dif,physical_mesh,timestep,u0,ua,ub,"arithmetic");
+    
+    u0 = u1;
+    time = time+timestep;
+    
+  end
+  
 
+  %"Continuous" variables (for plot)
+  dense_mesh    = linspace(xa,xb,5000)';
+  u_exact       = exact_sol(dense_mesh,time,velocity);
+  u_initial     = exact_sol(dense_mesh,time_start,velocity);
+  grad_dense    = gradient(u_exact,dense_mesh);
+  [omega_dense] = monitor_fun(grad_dense,eps_omega); 
+  %Plot
+  figure()
+  plot(dense_mesh, u_initial, '-')
+  hold on
+  plot(dense_mesh, u_exact, '-')
+  hold on
+  plot(physical_mesh, u1, '-s')
+  hold on
+  plot(physical_mesh,comp_mesh, ':')
+  hold on
+  plot(physical_mesh, 0.5, 'd')
+  %hold on
+  %plot(physical_mesh, grad_u0, '-s')
+  xlim([xa,xb]);
+  ylim([-0.5,1.5]);
+  legend('u_{initial}','{u}_{exact}','{u}_{num}','{\xi}(x_j)','x_j');
+  title('PDE')
 
+ 

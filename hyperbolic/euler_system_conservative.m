@@ -1,6 +1,9 @@
+close all
+clear
+
 x0 = 0;
 x1 = 1;
-nnodes = 501;
+nnodes = 1001;
 xc = 0.5;
 
 t0 = 0.0;
@@ -22,28 +25,29 @@ p_initial = zeros(size(physical_grid_uniform));
 for i = 1:length(physical_grid_uniform)
     
     if(physical_grid_uniform(i)<0.5) 
-        rho_initial(i) = 8.0;
-        u_initial(i) = 0.0;
-        p_initial(i) = 10.0/gamma;
-    else
         rho_initial(i) = 1.0;
         u_initial(i) = 0.0;
-        p_initial(i) = 1/gamma;
+        p_initial(i) = 1.0;
+    else
+        rho_initial(i) = 0.125;
+        u_initial(i) = 0.0;
+        p_initial(i) = 0.1;
     end
     
 end
 
-%exactsol = analytic_sod(tF);
-
-% [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, upwind, verbose, 1, ...
-%     kernel_width, adaptive_mesh);
 
 [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative_WENO5(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF);
+% [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, verbose, kernel_width, adaptive_mesh);
+
+                                                                                               
+[data] = analytic_sod(t_current, nnodes);
 
 figure()
 %plot(exactsol.x, exactsol.rho)
-hold on
 plot(physical_grid, u1_new, '-o', 'Linewidth', 1)
+hold on
+plot(physical_grid, data.rho, 'Linewidth', 4)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Density')
 set(gca, 'fontsize', 40)
@@ -51,6 +55,8 @@ title(strcat('Density - time = ', num2str(t_current)))
 
 figure()
 plot(physical_grid, u2_new./u1_new, '-o', 'Linewidth', 1)
+hold on
+plot(physical_grid, data.u, 'Linewidth', 4)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Velocity')
 set(gca, 'fontsize', 40)
@@ -58,6 +64,8 @@ title(strcat('Velocity - time = ', num2str(t_current)))
 
 figure()
 plot(physical_grid, (u3_new - 1/2*u2_new.*u2_new./u1_new)./u1_new, '-o', 'Linewidth', 1)
+hold on
+plot(physical_grid, data.e, 'Linewidth', 4)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Energy')
 set(gca, 'fontsize', 40)
@@ -66,6 +74,8 @@ title(strcat('Energy - time = ', num2str(t_current)))
 % 
 figure()
 plot(physical_grid, p_new, '-o', 'Linewidth', 1)
+hold on
+plot(physical_grid, data.P, 'Linewidth', 4)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Pressure')
 set(gca, 'fontsize', 40)

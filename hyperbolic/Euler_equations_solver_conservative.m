@@ -1,4 +1,4 @@
-function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative(gamma, x, U1, U2, P, t0, tF, upwind, verbose, solver, kernel_width, adaptive_mesh)
+function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative(gamma, x, U1, U2, P, t0, tF, verbose, kernel_width, adaptive_mesh)
 
     n = length(x);
 

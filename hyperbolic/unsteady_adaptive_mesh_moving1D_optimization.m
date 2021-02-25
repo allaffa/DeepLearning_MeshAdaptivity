@@ -18,7 +18,7 @@ function [final_mesh, uniform_grid, omega] = unsteady_adaptive_mesh_moving1D_opt
     final_mesh(1) = physical_grid(1);
     final_mesh(end) = physical_grid(end);
     
-    for time_step=1:10000
+    for time_step=1:10
  
         for i = 2:length(physical_grid)-1
 
