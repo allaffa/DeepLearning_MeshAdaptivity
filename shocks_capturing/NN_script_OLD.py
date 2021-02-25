@@ -32,6 +32,8 @@ model.add(Dense(100, input_dim=input_dim, activation='relu'))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(100, activation='relu'))
+model.add(Dense(100, activation='relu'))
+model.add(Dense(100, activation='relu'))
 model.add(Dense(output_dim, activation=None))
 
 #set-up optimizer
@@ -68,7 +70,7 @@ print('test loss, test acc:', results)
 
 preds = model.predict(x_test)
 
-num_pred = 7050
+num_pred = 52033
 
 uniform = np.linspace(0,1,x_train.shape[1])
 
@@ -90,9 +92,11 @@ plt.xlabel('Uniform mesh node coordinates')
 plt.ylabel('Values of shock profile')
 ax.legend()
 
-old_pred = model.predict(x_test[num_pred])
+"""
+old_pred = model.predict(np.expand_dims(x_test[num_pred,:], axis=0))
 x_test[num_pred][140:170] = 9.0
-new_pred = model.predict(x_test[num_pred])
+new_pred = model.predict(np.expand_dims(x_test[num_pred,:], axis=0))
+"""
 
 loss = history.history['loss']
 val_loss = history.history['val_loss']
