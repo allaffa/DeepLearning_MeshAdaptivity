@@ -1,18 +1,18 @@
-pyExec	= '/opt/anaconda3/bin/python3';
-[ver, exec, loaded]	= pyversion(pyExec);
-
-python_path = py.sys.path;
-
-% Add folders to python system path to loead version 3.7 of Python.
-if count(python_path, pyExec) == 0
-    insert(py.sys.path, int64(0), pyExec);
-end
-
-% Verify that the Python 3.7 version from Anaconda is successfully loaded
-[ver2, exec2, loaded2]	= pyversion;
-assert(loaded2==1);
-
-python_module = py.importlib.import_module('model_load_script');
+% pyExec	= '/opt/anaconda3/bin/python3';
+% [ver, exec, loaded]	= pyversion(pyExec);
+% 
+% python_path = py.sys.path;
+% 
+% %Add folders to python system path to loead version 3.7 of Python.
+% if count(python_path, pyExec) == 0
+%     insert(py.sys.path, int64(0), pyExec);
+% end
+% 
+% %Verify that the Python 3.7 version from Anaconda is successfully loaded
+% [ver2, exec2, loaded2]	= pyversion;
+% assert(loaded2==1);
+% 
+% python_module = py.importlib.import_module('model_load_script');
 %%
 
 %Problem definiton
@@ -48,6 +48,8 @@ python_module = py.importlib.import_module('model_load_script');
   
   %Initialize physical mesh as uniform
   physical_mesh = linspace( xa, xb, nnodes )';
+  
+  gamma_val = 0.5;
 
   %Boundary and initial conditions
   ua = 0.0;
@@ -59,7 +61,7 @@ python_module = py.importlib.import_module('model_load_script');
   vel = velocity*ones(nnodes,1);
   dif = diffusion*ones(nnodes,1);
   
-  AI_method = 'DL';
+  AI_method = 'RL';
 
   %Time stepping
   for ts = 1:numtimesteps
@@ -68,15 +70,15 @@ python_module = py.importlib.import_module('model_load_script');
     
     init_mesh = physical_mesh;
       
-    if strcmp(AI_method, 'DL')
-        physical_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(u0))));
-        physical_mesh = sort(physical_mesh);
-    else
-        standard_deviation =  1e-2;
-        physical_mesh = importance_sampling_mesh(physical_mesh, u0, standard_deviation);
-    end
-
-    u0 = interp1(init_mesh,u0,physical_mesh,'linear','extrap');
+%     if strcmp(AI_method, 'DL')
+%         physical_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(u0))));
+%         physical_mesh = sort(physical_mesh);
+%     else
+%         physical_mesh = importance_sampling_mesh(physical_mesh, u0, gamma_val);
+%         physical_mesh = sort(physical_mesh);
+%     end
+% 
+%     u0 = interp1(init_mesh,u0,physical_mesh,'linear','extrap');
 
     %Solve PDE using adaptive mesh
     [u1] = solve_ADE(nnodes,vel,dif,physical_mesh,timestep,u0,ua,ub,"arithmetic");
@@ -95,15 +97,16 @@ python_module = py.importlib.import_module('model_load_script');
   [omega_dense] = monitor_fun(grad_dense,eps_omega); 
   %Plot
   figure()
-  plot(dense_mesh, u_initial, '-')
+  plot(dense_mesh, u_initial, '-', 'Linewidth', 4)
+  set(gca, 'Fontsize', 48)
   hold on
-  plot(dense_mesh, u_exact, '-')
+  plot(dense_mesh, u_exact, '-', 'Linewidth', 4)
   hold on
-  plot(physical_mesh, u1, '-s')
+  plot(physical_mesh, u1, '-s', 'Linewidth', 4)
   hold on
-  plot(physical_mesh,comp_mesh, ':')
+  plot(physical_mesh,comp_mesh, ':', 'Linewidth', 4)
   hold on
-  plot(physical_mesh, 0.5, 'd')
+  plot(physical_mesh, 0.5, 'd', 'Linewidth', 4)
   %hold on
   %plot(physical_mesh, grad_u0, '-s')
   xlim([xa,xb]);

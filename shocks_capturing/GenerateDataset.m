@@ -10,7 +10,8 @@ nnodes       = 201;
 time_start   = 0.0;
 velocity     = 1.e-2;
 diffusion    = 0.e-5;
-niter_mmpde  = 4;
+niter_mmpde  = 1;
+eps_nonlin   = 1e-3;
 niter_coupl  = 2;
 smoothing    = smooth_opt(3);
 nsmooth      = 2;
@@ -60,13 +61,14 @@ for problem_index = 1:num_problems
         end
     end
     
-    num_profile_smoothing = rand(1,3);
+    num_profile_smoothing = 1;
     
     for iter = 0:num_profile_smoothing
         profile = smoothdata(profile, 'gaussian', ceil(ksmooth*length(comp_mesh)));
     end
     
-    [physical_mesh,u0,u1,omega] = adapt_mesh(nnodes,xa,xb,comp_mesh,profile,profile,physical_mesh,niter_mmpde,eps_omega,avrg,smoothing,nsmooth,ksmooth,interp_method);
+    [physical_mesh,u0,u1,omega] = adapt_mesh(nnodes,xa,xb,comp_mesh,profile,profile,physical_mesh,physical_mesh,niter_mmpde,eps_nonlin,eps_omega,avrg,smoothing,nsmooth,ksmooth,interp_method);
+                                 
     grid = physical_mesh';
     
     index_counter = index_counter + 1;

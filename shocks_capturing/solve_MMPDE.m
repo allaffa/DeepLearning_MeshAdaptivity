@@ -1,6 +1,6 @@
 %Solution of linearized MMPDE: d/dksi (omega dx/dksi) = 0 
 %2nd order FVM on (computational) uniform grid
-function [final_mesh] = solve_MMPDE(omega,ksi,n,xa,xb,avrg)
+function [final_mesh,A,b] = solve_MMPDE(omega,ksi,n,xa,xb,avrg)
 
   A = zeros(n,n);
   b = zeros(n,1);

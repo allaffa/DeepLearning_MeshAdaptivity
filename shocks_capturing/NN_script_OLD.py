@@ -32,18 +32,16 @@ model.add(Dense(100, input_dim=input_dim, activation='relu'))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(100, activation='relu'))
 model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
-model.add(Dense(100, activation='relu'))
 model.add(Dense(output_dim, activation=None))
 
 #set-up optimizer
-opt = keras.optimizers.Nadam(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
+opt = keras.optimizers.Nadam(learning_rate=1e-4, beta_1=0.9, beta_2=0.999)
 
 # compile the keras model
 model.compile(loss='mae', optimizer=opt, metrics=['accuracy'])
 
 # fit the keras model on the dataset
-history = model.fit(x_train, y_train, epochs=5000, batch_size=100, validation_split = 0.2)
+history = model.fit(x_train, y_train, epochs=1000, batch_size=100, validation_split = 0.2)
 
 #Save the trained model in a .json file
 # serialize model to JSON
@@ -70,7 +68,7 @@ print('test loss, test acc:', results)
 
 preds = model.predict(x_test)
 
-num_pred = 52033
+num_pred = 935
 
 uniform = np.linspace(0,1,x_train.shape[1])
 
