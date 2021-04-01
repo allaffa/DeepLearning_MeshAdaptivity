@@ -28,6 +28,7 @@ function [adapt_mesh,u0,uCurr,omega,l2res,iter] = adapt_mesh(nnodes,xa,xb,comp_m
     if l2res<eps_nonlin break, end;
   end
 
+  if iter == niter fprintf('iter_mmpde = %i\n',niter); end;
   %Interpolate u0 solution on final mesh
   u0 = interp1(init_mesh,u0,adapt_mesh,interp_method,'extrap');
 
