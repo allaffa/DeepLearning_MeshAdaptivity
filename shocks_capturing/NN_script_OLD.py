@@ -26,7 +26,7 @@ training_size = final_meshes.shape[0]
 #Split between train and validaiton set
 x_train, x_test, y_train, y_test = train_test_split(shocks, final_meshes, test_size=0.2, random_state=42)
 
-#build neural network
+#build MLP neural network
 model = Sequential()
 model.add(Dense(100, input_dim=input_dim, activation='relu'))
 model.add(Dense(100, activation='relu'))
