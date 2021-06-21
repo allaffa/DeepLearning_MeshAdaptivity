@@ -1,8 +1,8 @@
-function [x, u1_new, u2_new, u3_new, p_new, t] = Euler_equations_solver_conservative_WENO5(gamma_var, x, U1, U2, P, t0, tF)
+function [x, u1_new, u2_new, u3_new, p_new, t] = Euler_equations_solver_conservative_WENO5(gamma_var, x, U1, U2, P, t0, tF, nghost)
 
     n = length(x);
     dx_min = min(diff(x));
-    bl=1:3; br=n-2:n;
+%     bl=1:3; br=n-2:n;
   
     % initial condition for density
     u1_old = U1;
@@ -42,21 +42,31 @@ function [x, u1_new, u2_new, u3_new, p_new, t] = Euler_equations_solver_conserva
         
         %% Runge-Kutta step    
         q0 = sol; 
+        q0=reflet_bc_apply(q0,nghost);
                 
         % 1st stage
-        res= FV_compWise_WENO5LF1d(gamma_var,lambda,dt,q0,dx_min);
-        q=q0-dt*res;
-        q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
+        res= FV_compWise_WENO5LF1d(gamma_var,lambda,dt,q0,dx_min,nghost);
+        k1 = -res;
+        q1 = q0 + 0.5*k1*dt;
+        q1=reflet_bc_apply(q1,nghost);
+%         q=q0-dt*res;
+%         q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
 
         % 2nd Stage
-        res=FV_compWise_WENO5LF1d(gamma_var,lambda,dt,q,dx_min);
-        q = 0.75*q0+0.25*(q-dt*res);
-        q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
+        res=FV_compWise_WENO5LF1d(gamma_var,lambda,0.5*dt,q1,dx_min,nghost);
+        k2 = -res;
+        q2 = q0 + ( -k1 + 2.0*k2 ) * dt;
+        q2=reflet_bc_apply(q2,nghost);
+%         q = 0.75*q0+0.25*(q-dt*res);
+%         q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
 
         % 3rd stage
-        res=FV_compWise_WENO5LF1d(gamma_var,lambda,dt,q,dx_min);
-        q = (q0+2*(q-dt*res))/3;
-        q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
+        res=FV_compWise_WENO5LF1d(gamma_var,lambda,dt,q2,dx_min,nghost);
+        k3 = -res;
+        q = q0 + ( k1 + 4.0*k2 + k3 ) / 6.0 * dt;
+        q=reflet_bc_apply(q,nghost);
+%         q = (q0+2*(q-dt*res))/3;
+%         q(:,bl)=q0(:,bl); q(:,br)=q0(:,br); % Neumann BCs
 
         sol = q;     
         
@@ -75,7 +85,7 @@ function [x, u1_new, u2_new, u3_new, p_new, t] = Euler_equations_solver_conserva
         % Compute dt for next time step
         lambda=max(abs(u2_old./u1_old)+a);         
         
-        t = t + dt;
+        t = t + dt
         
     end  
    

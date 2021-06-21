@@ -1,6 +1,7 @@
-function res = FV_compWise_WENO5LF1d(gamma,lambda,dt,q,dx)
+function res = FV_compWise_WENO5LF1d(gamma,lambda,dt,q,dx,nghost)
 
-nx=size(q,2); R=3; I=R:(nx-R); % R: stencil size 
+nx=size(q,2); I=nghost:(nx-nghost); % I notation is based on the right flux, i+1/2!!
+% nx=size(q,2); R=3; I=R:(nx-R); % R: stencil size 
 LF=zeros(size(q)); res=zeros(size(q));
 
 %% Right Flux
