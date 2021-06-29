@@ -1,4 +1,4 @@
-function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative(gamma, x, U1, U2, P, t0, tF, verbose, kernel_width, adaptive_mesh)
+function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equations_solver_conservative(gamma, x, U1, U2, P, t0, tF, verbose, kernel_width, adaptive_mesh, python_module)
 
     n = length(x);
 
@@ -43,18 +43,36 @@ function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equatio
     
     t = t0;
     
+    count =  0;
+    
            
    %% Lax-Wendroff 
    
    while(t<tF)
-
-       if(adaptive_mesh)
+       
+      uniform_mesh = linspace( x(1), x(end), n)';
            
-           [x_new, ~, monitor_function] = adaptive_mesh_moving1D_optimization( x_old, u1_old, kernel_width );
-           u1_old2 = interp1(x_old,u1_old,x_new, 'linear', 'extrap');
-           u2_old2 = interp1(x_old,u2_old,x_new, 'linear', 'extrap');
-           u3_old2 = interp1(x_old,u3_old,x_new, 'linear', 'extrap');
-           p_old2 = interp1(x_old,p_old,x_new, 'linear', 'extrap');   
+      %Parameters
+      smooth_opt   = ["none","weightavrg","gaussian"];
+      avrg_opt     = ["arithmetic","harmonic","geometric"];
+      interp_opt   = ["linear","pchip","spline"];
+      niter        = 50;
+      eps_nonlin   = 1.e-5;
+      smoothing    = smooth_opt(1);
+      nsmooth      = 4;
+      ksmooth      = 1.0;
+      avrg         = avrg_opt(1); 
+      interp_method= interp_opt(2);
+
+       if adaptive_mesh == "standard" && mod(count, 1)==0   
+           
+           eps_omega    = 8 * 1.e-3;
+           [x_new,~,~,monitor_function,~,~] = adapt_mesh(n,x(1),x(end),uniform_mesh,u2_old,u2_old,x_old,x_old,niter,eps_nonlin,eps_omega,avrg,smoothing,nsmooth,ksmooth,interp_method);
+
+           u1_old2 = interp1(x_old,u1_old,x_new, 'pchip', 'extrap');
+           u2_old2 = interp1(x_old,u2_old,x_new, 'pchip', 'extrap');
+           u3_old2 = interp1(x_old,u3_old,x_new, 'pchip', 'extrap');
+           p_old2 = interp1(x_old,p_old,x_new, 'pchip', 'extrap');   
 
            %Initial condition for the next time step
            u1_old = u1_old2;
@@ -62,8 +80,44 @@ function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equatio
            u3_old = u3_old2;  
            p_old = p_old2;
            x = x_new;
-           x_old = x_new;
-       end       
+           x_old = x_new;         
+         
+       elseif adaptive_mesh == "DL" && mod(count, 1)==0
+           eps_omega    = 1.e-2;
+           grad_u = gradient(u1_old,x_old);
+           monitor_function   = monitor_fun(grad_u,eps_omega);
+           monitor_function = interp1(x_old,monitor_function,uniform_mesh,interp_method,'extrap');
+           AI_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(monitor_function))));
+           AI_mesh = cumsum(AI_mesh);
+           x_new = x(1) + (AI_mesh - AI_mesh(1))/(AI_mesh(end) - AI_mesh(1));
+           
+           u1_old2 = interp1(x_old,u1_old,x_new, 'pchip', 'extrap');
+           u2_old2 = interp1(x_old,u2_old,x_new, 'pchip', 'extrap');
+           u3_old2 = interp1(x_old,u3_old,x_new, 'pchip', 'extrap');
+           p_old2 = interp1(x_old,p_old,x_new, 'pchip', 'extrap');   
+
+           %Initial condition for the next time step
+           u1_old = u1_old2;
+           u2_old = u2_old2;
+           u3_old = u3_old2;  
+           p_old = p_old2;
+           x = x_new;
+           x_old = x_new;           
+           
+       end
+
+       % LUKA MAY ASK ABOUT THIS
+       u1_old2 = interp1(x_old,u1_old,x_old, 'pchip', 'extrap');
+       u2_old2 = interp1(x_old,u2_old,x_old, 'pchip', 'extrap');
+       u3_old2 = interp1(x_old,u3_old,x_old, 'pchip', 'extrap');
+       p_old2 = interp1(x_old,p_old,x_old, 'pchip', 'extrap');   
+
+       %Initial condition for the next time step
+       u1_old = u1_old2;
+       u2_old = u2_old2;
+       u3_old = u3_old2;  
+       p_old = p_old2;
+               
        
        % compute the new time step
        dt = time_step_compute(gamma, p_old, u1_old, u2_old./u1_old, x);
@@ -138,6 +192,8 @@ function [x, u1_new, u2_new, u3_new, p_new, t, monitor_function] = Euler_equatio
        p_old = p_new; 
 
        t = t + dt;
+       
+       count = count + 1;
 
    end   
    

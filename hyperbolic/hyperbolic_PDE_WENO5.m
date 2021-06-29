@@ -3,7 +3,7 @@
 
 x0 = 0;
 x1 = 1;
-nnodes = 501;
+nnodes = 201;
 
 t0 = 0.0;
 n_time_steps = 100;
@@ -20,12 +20,12 @@ sol_exact_fun = @(x, t, vel) 0.0 + 1.0 * ( (x >= 0.25 + vel * t) & (x <= 0.5 + v
 physical_grid = linspace( x0, x1, nnodes )';
 uniform_grid = physical_grid;
 
-% initial condition evaluated on unifrom mesh
-solution = sol_exact_fun(physical_grid, 0.0, velocity) ; 
-
 velocity = 1.0;
 cfl = 0.95;
 dx_min = min(diff(physical_grid));
+
+% initial condition evaluated on unifrom mesh
+solution = sol_exact_fun(physical_grid, 0.0, velocity) ; 
 
 % compute the new time step
 dt = cfl * dx_min / velocity;

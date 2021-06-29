@@ -1,10 +1,30 @@
 close all
 clear
 
+%%
+
+pyExec	= '/opt/anaconda3/bin/python3';
+% [ver, exec, loaded]	= pyversion(pyExec);
+
+python_path = py.sys.path;
+
+% Add folders to python system path to loead version 3.7 of Python.
+if count(python_path, pyExec) == 0
+    insert(py.sys.path, int64(0), pyExec);
+end
+
+% Verify that the Python 3.7 version from Anaconda is successfully loaded
+[ver2, exec2, loaded2]	= pyversion;
+assert(loaded2==1);
+
+python_module = py.importlib.import_module('model_load_script');
+
+%%
+
 x0 = 0;
 x1 = 0.6;
 nghost = 3;
-nodes = 2401;
+nodes = 201;
 nnodes = nodes + 2*nghost;
 xc = 0.5;
 
@@ -14,7 +34,7 @@ gamma = 1.4;
 
 upwind = true;
 verbose = true;
-adaptive_mesh = false;
+adaptive_mesh = "none";
 
 kernel_width = nnodes * 0.05;
 
@@ -70,74 +90,131 @@ for i = 1:length(physical_grid_uniform)
     
 end
 
-
+tic
 [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative_WENO5(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, nghost);
-% [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, verbose, kernel_width, adaptive_mesh);
+% [physical_grid, u1_new, u2_new, u3_new, p_new, t_current] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, verbose, kernel_width, adaptive_mesh, python_module);
+toc
 
-                                                                                               
-[data] = analytic_sod(t_current, nnodes);
+%
+adaptive_mesh = "none";
+tic
+[physical_grid2, u1_new2, u2_new2, u3_new2, p_new2, t_current2, time_history2, grid_history2] = Euler_equations_solver_conservative_WENO5_nonuniform(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, nghost, verbose, kernel_width, adaptive_mesh, python_module);
+% [physical_grid2, u1_new2, u2_new2, u3_new2, p_new2, t_current2] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, verbose, kernel_width, adaptive_mesh, python_module);
+toc
+
+%
+adaptive_mesh = "DL";
+tic
+[physical_grid3, u1_new3, u2_new3, u3_new3, p_new3, t_current3, time_history3, grid_history3] = Euler_equations_solver_conservative_WENO5_nonuniform(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, nghost, verbose, kernel_width, adaptive_mesh, python_module);
+% [physical_grid3, u1_new3, u2_new3, u3_new3, p_new3, t_current3] = Euler_equations_solver_conservative(gamma, physical_grid_uniform, rho_initial, u_initial, p_initial, t0, tF, verbose, kernel_width, adaptive_mesh, python_module);
+toc
+
+%%
+
+%% Plots
+
+% [data] = analytic_sod(t_current, nnodes);
+[data] = exact_sedov_1d(gamma, linspace(0, 0.6, 241)');
 
 figure()
-% plot(physical_grid, data.rho, 'Linewidth', 1)
+plot(physical_grid_uniform, u1_new , 'b-o', 'Linewidth', 6)
 hold on
-%plot(exactsol.x, exactsol.rho)
-plot(physical_grid, u1_new, 'r.', 'Linewidth', 2)
+plot(physical_grid3, u1_new3, 'g-o', 'Linewidth', 6)
+plot(physical_grid2, u1_new2, 'r-o', 'Linewidth', 6)
+plot(data.c_x, data.rho, 'k', 'Linewidth', 6)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Density')
-% set(gca, 'fontsize', 40)
+set(gca, 'fontsize', 72)
+h = legend('Uniform mesh', 'DL adaptivity', 'Standard adaptivity', 'Exact solution');
+set(h, 'Fontsize', 50)
 % title(strcat('Density - time = ', num2str(t_current)))
+title(strcat('Density - time = ', num2str(1.0)))
+
 
 figure()
-% plot(physical_grid, data.u, 'Linewidth', 1)
+plot(physical_grid_uniform, u2_new./u1_new, 'b-o', 'Linewidth', 6)
 hold on
-plot(physical_grid, u2_new./u1_new, 'r.', 'Linewidth', 2)
+plot(physical_grid3, u2_new3./u1_new3, 'g-o', 'Linewidth', 6)
+plot(physical_grid2, u2_new2./u1_new2, 'r-o', 'Linewidth', 6)
+plot(data.x, data.u, 'k', 'Linewidth', 6)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Velocity')
-% set(gca, 'fontsize', 40)
+set(gca, 'fontsize', 72)
+h = legend('Uniform mesh', 'DL adaptivity', 'Standard adaptivity', 'Exact solution');
+set(h, 'Fontsize', 50)
 % title(strcat('Velocity - time = ', num2str(t_current)))
+title(strcat('Velocity - time = ', num2str(1.0)))
 
 figure()
-% plot(physical_grid, data.e, 'Linewidth', 1)
+plot(physical_grid_uniform, (u3_new - 1/2*u2_new.*u2_new./u1_new)./u1_new, 'b-o', 'Linewidth', 6)
 hold on
-plot(physical_grid, (u3_new - 1/2*u2_new.*u2_new./u1_new)./u1_new, 'r.', 'Linewidth', 2)
+plot(physical_grid3, (u3_new3 - 1/2*u2_new3.*u2_new3./u1_new3)./u1_new3, 'g-o', 'Linewidth', 6)
+plot(physical_grid2, (u3_new2 - 1/2*u2_new2.*u2_new2./u1_new2)./u1_new2, 'r-o', 'Linewidth', 6)
+plot(data.c_x, data.e, 'k', 'Linewidth', 6)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Energy')
-% set(gca, 'fontsize', 40)
+set(gca, 'fontsize', 72)
+h = legend('Uniform mesh', 'DL adaptivity', 'Standard adaptivity', 'Exact solution');
+set(h, 'Fontsize', 50)
 % title(strcat('Energy - time = ', num2str(t_current)))
+title(strcat('Energy - time = ', num2str(1.0)))
 
 % 
 figure()
-% plot(physical_grid, data.P, 'Linewidth', 1)
+plot(physical_grid_uniform, p_new, 'b-o', 'Linewidth', 6)
 hold on
-plot(physical_grid, p_new, 'r.', 'Linewidth', 2)
+plot(physical_grid3, p_new3, 'g-o', 'Linewidth', 6)
+plot(physical_grid2, p_new2, 'r-o', 'Linewidth', 6)
+plot(data.c_x, data.P, 'k', 'Linewidth', 6)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('Pressure')
-% set(gca, 'fontsize', 40)
+set(gca, 'fontsize', 72)
+h = legend('Uniform mesh', 'DL adaptivity', 'Standard adaptivity', 'Exact solution');
+set(h, 'Fontsize', 50)
 % title(strcat('Pressure - time = ', num2str(t_current)))
+title(strcat('Pressure - time = ', num2str(1.0)))
 
 
 figure()
-plot(physical_grid_uniform, physical_grid, '-o', 'Linewidth', 1)
+plot(physical_grid_uniform, physical_grid2, '-o', 'Linewidth', 1)
 xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
 ylim([physical_grid_uniform(1) physical_grid_uniform(end)])
 title('New mesh')
-set(gca, 'fontsize', 40)
+set(gca, 'fontsize', 72)
 
+figure
+plot(diff(physical_grid2), '-o', 'Linewidth', 6)
+hold on
+plot(diff(physical_grid3), '-o', 'Linewidth', 6)
+legend('Standard adaptivity', 'DL adaptivity')
+title('Mesh spacing')
+set(gca, 'fontsize', 72)
 
-% figure()
-% plot(physical_grid, 1.0, '-o', 'Linewidth', 1)
-% xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
-% title('Flat new mesh plot')
-% set(gca, 'fontsize', 40)
+figure()
+for i=1:size(grid_history2, 1)
+    if mod(i,5)==0
+        plot(grid_history2(i,:), time_history2(i), 'b.', 'Linewidth', 1);
+        xlim([x0, x1])
+        set(gca, 'Fontsize', 48)
+        xlabel('Non-uniform mesh coordinates')
+        ylabel('time step')
+        title('Standard mesh adaptivity')
+        hold on
+    end
+end
 
-% figure()
-% plot(physical_grid_uniform, omega, '-o', 'Linewidth', 1)
-% xlim([physical_grid_uniform(1) physical_grid_uniform(end)])
-% title('Monitor function')
-% set(gca, 'fontsize', 40)
-
-save('sedov_weno5_2Kcell');
-% save('sedov_weno5');
+figure()
+for i=1:size(grid_history3, 1)
+    if mod(i,2)==0
+        plot(grid_history3(i,:), time_history3(i), 'b.', 'Linewidth', 1);
+        xlim([x0, x1])
+        set(gca, 'Fontsize', 48)
+        xlabel('Non-uniform mesh coordinates')
+        ylabel('time step')
+        title('DL adaptivity')
+        hold on
+    end
+end
 
 
 
