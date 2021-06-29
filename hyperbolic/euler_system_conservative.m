@@ -192,7 +192,7 @@ set(gca, 'fontsize', 72)
 
 figure()
 for i=1:size(grid_history2, 1)
-    if mod(i,5)==0
+    if mod(i,25)==0
         plot(grid_history2(i,:), time_history2(i), 'b.', 'Linewidth', 1);
         xlim([x0, x1])
         set(gca, 'Fontsize', 48)
@@ -205,7 +205,7 @@ end
 
 figure()
 for i=1:size(grid_history3, 1)
-    if mod(i,2)==0
+    if mod(i,10)==0
         plot(grid_history3(i,:), time_history3(i), 'b.', 'Linewidth', 1);
         xlim([x0, x1])
         set(gca, 'Fontsize', 48)
