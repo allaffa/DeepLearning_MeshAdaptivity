@@ -1,18 +1,18 @@
-% pyExec	= '/opt/anaconda3/bin/python3';
+pyExec	= '/opt/anaconda3/bin/python3';
 % [ver, exec, loaded]	= pyversion(pyExec);
-% 
-% python_path = py.sys.path;
-% 
-% %Add folders to python system path to loead version 3.7 of Python.
-% if count(python_path, pyExec) == 0
-%     insert(py.sys.path, int64(0), pyExec);
-% end
-% 
-% %Verify that the Python 3.7 version from Anaconda is successfully loaded
-% [ver2, exec2, loaded2]	= pyversion;
-% assert(loaded2==1);
-% 
-% python_module = py.importlib.import_module('model_load_script');
+
+python_path = py.sys.path;
+
+%Add folders to python system path to loead version 3.7 of Python.
+if count(python_path, pyExec) == 0
+    insert(py.sys.path, int64(0), pyExec);
+end
+
+%Verify that the Python 3.7 version from Anaconda is successfully loaded
+[ver2, exec2, loaded2]	= pyversion;
+assert(loaded2==1);
+
+python_module = py.importlib.import_module('model_load_script');
 %%
 
 %Problem definiton
@@ -29,19 +29,20 @@
   interp_opt   = ["linear","pchip"];
   nnodes       = 201;
   time_start   = 0.0;
-  velocity     = 1.e-2;
+  velocity     = 1;
   diffusion    = 0.e-5;
-  niter_mmpde  = 4;
+  niter_mmpde  = 128;
   niter_coupl  = 2;
+  eps_mmpde    = 1.e-3;
   smoothing    = smooth_opt(1);
   nsmooth      = 2;
   ksmooth      = 1.2e-1;
   avrg         = avrg_opt(1); 
-  numtimesteps = 16;
-  timestep     = 0.5;
+  numtimesteps = 100;
+  timestep     = 0.0005;
   time 	       = time_start;
   eps_omega    = 1.e-2;
-  interp_method= interp_opt(1);
+  interp_method= interp_opt(2);
   
   %Computational mesh is always uniform; ksi e [0,1]
   comp_mesh = linspace( 0, 1, nnodes)';
@@ -59,9 +60,9 @@
 
   %PDE coefficients arrays
   vel = velocity*ones(nnodes,1);
-  dif = diffusion*ones(nnodes,1);
+  dif = diffusion*zeros(nnodes,1);
   
-  AI_method = 'RL';
+  AI_method = 'DL';
 
   %Time stepping
   for ts = 1:numtimesteps
@@ -69,16 +70,23 @@
     display(strcat("Time step: ",num2str(ts)," of ",num2str(numtimesteps)))
     
     init_mesh = physical_mesh;
-      
-%     if strcmp(AI_method, 'DL')
-%         physical_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(u0))));
-%         physical_mesh = sort(physical_mesh);
-%     else
-%         physical_mesh = importance_sampling_mesh(physical_mesh, u0, gamma_val);
-%         physical_mesh = sort(physical_mesh);
-%     end
-% 
-%     u0 = interp1(init_mesh,u0,physical_mesh,'linear','extrap');
+    
+    %Solve nonlinear MMPDE to get final mesh
+%     [physical_mesh,u0,u1,omega,l2res,itr_mmpde] = adapt_mesh(nnodes,xa,xb,comp_mesh,u0,u1,init_mesh,physical_mesh,niter_mmpde,eps_mmpde,eps_omega,avrg,smoothing,nsmooth,ksmooth,interp_method);
+    if strcmp(AI_method, 'DL')
+        u0_uniform = interp1(init_mesh,u0,comp_mesh,'pchip','extrap');
+        grad_uCurr = gradient(u0,comp_mesh);
+        omega   = monitor_fun(grad_uCurr,eps_omega);
+        omega = smooth_fun(omega,10,1);
+        AI_mesh = double(py.array.array('d',py.numpy.nditer(python_module.evaluate_model_load(omega))));
+        AI_mesh = cumsum(AI_mesh);
+        physical_mesh = physical_mesh(1) + (AI_mesh - AI_mesh(1))/(AI_mesh(end)-AI_mesh(1));
+    else
+        physical_mesh = importance_sampling_mesh(physical_mesh, u0, gamma_val);
+        physical_mesh = sort(physical_mesh);
+    end
+% % % 
+    u0 = interp1(init_mesh,u0,physical_mesh,'pchip','extrap');
 
     %Solve PDE using adaptive mesh
     [u1] = solve_ADE(nnodes,vel,dif,physical_mesh,timestep,u0,ua,ub,"arithmetic");
@@ -97,21 +105,23 @@
   [omega_dense] = monitor_fun(grad_dense,eps_omega); 
   %Plot
   figure()
-  plot(dense_mesh, u_initial, '-', 'Linewidth', 4)
+%   plot(dense_mesh, u_initial, '-', 'Linewidth', 4)
   set(gca, 'Fontsize', 48)
   hold on
-  plot(dense_mesh, u_exact, '-', 'Linewidth', 4)
+  plot(dense_mesh, u_exact, '-', 'Linewidth', 5)
   hold on
-  plot(physical_mesh, u1, '-s', 'Linewidth', 4)
-  hold on
-  plot(physical_mesh,comp_mesh, ':', 'Linewidth', 4)
-  hold on
-  plot(physical_mesh, 0.5, 'd', 'Linewidth', 4)
+  plot(physical_mesh, u1, '-', 'Linewidth', 5)
+%   hold on
+%   plot(physical_mesh,comp_mesh, ':', 'Linewidth', 4)
+%   hold on
+%   plot(physical_mesh, 0.5, 'd', 'Linewidth', 4)
   %hold on
   %plot(physical_mesh, grad_u0, '-s')
   xlim([xa,xb]);
-  ylim([-0.5,1.5]);
-  legend('u_{initial}','{u}_{exact}','{u}_{num}','{\xi}(x_j)','x_j');
-  title('PDE')
+  ylim([-0.2,1.2]);
+  xlabel('Coordinates in the physical domain')
+  ylabel('Solution values')
+  legend('Exact solution','Numerical solution','{\xi}(x_j)','x_j');
+  title(strcat('Time: ', num2str(time)))
 
  
